@@ -1,0 +1,40 @@
+# include <stdio.h>
+# include <unistd.h>
+# include <stdlib.h>
+# include <sys/wait.h>
+
+
+int main (){
+	int n;
+	printf ("Enter array size: ");
+	scanf ("%d",&n);
+	int arr[n], sum;
+	printf ("Enter Elements: ");
+	for (int i = 0; i<n; i++){
+		scanf("%d",&arr[i]);
+	}
+	printf ("ELEMENTS : ");
+	for (int i = 0; i<n; i++){
+		printf("%d ",arr[i]);
+	}
+	printf ("\n");
+	
+	pid_t pid = fork();
+	if (pid == 0) {
+		wait(NULL);
+		sum = 0;
+		for (int i = 0; i<n; i++){
+			if (arr[i] % 2 != 0) sum += arr[i];
+		}
+		printf ("Odd No. sum : %d\n",sum);
+	}
+	else if (pid > 0){
+		sum = 0;
+		for (int i = 0; i<n; i++){
+			if (arr[i] % 2 == 0) sum += arr[i];
+		}
+		printf ("Even No. sum : %d\n",sum);
+		exit(0);		
+	}
+	return 0;
+}
