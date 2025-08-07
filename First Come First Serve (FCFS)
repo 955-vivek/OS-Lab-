@@ -1,0 +1,67 @@
+# include <stdio.h>
+# include <stdlib.h>
+
+typedef struct process {
+	int PID, AT, BT, CT, ST, RT;
+	float TAT, WT;
+} Process;
+
+int compare (const void *p1, const void *p2){
+	int a = ((Process*)p1)->AT; 
+	int b = ((Process*)p2)->AT; 
+
+	if (a<b) return -1;
+	else return 1;
+}
+
+int main (){
+	int n, STAT = 0, SWT = 0, SBT = 0;
+	float ATAT, AWT, CPU, throughput;
+	printf("Number of process: ");
+	scanf ("%d",&n);
+	Process P[n];
+	printf ("Enter the Arrival time and Burst time for %d processes:\n",n);
+	for (int i = 0; i<n; i++){
+		printf ("Enter Arrival time and Burst time for Process %d: ",i+1);
+		scanf ("%d%d",&P[i].AT,&P[i].BT);
+		P[i].PID = i + 1;
+	}
+
+	qsort ((void *)P, n, sizeof(Process), compare); // In-built sorting function in C
+
+	// Calculating Completion time, Turn Arround Time, Waiting Time
+	for (int i = 0; i<n; i++){
+		if (i == 0)
+			P[0].CT = P[0].AT + P[0].BT; // Completion time
+		else if (P[i-1].CT <= P[i].AT)
+			P[i].CT = P[i].AT + P[i].BT; // Completion time
+		else
+			P[i].CT = P[i-1].CT + P[i].BT; // Completion Time
+			
+		P[i].TAT = P[i].CT - P[i].AT; // Turn-Arround Time
+		P[i].WT = P[i].TAT - P[i].BT; // Waiting Time
+		P[i].ST = P[i].CT - P[i].BT; // Starting Time
+		P[i].RT = P[i].ST - P[i].AT; // Response Time
+		
+		STAT += P[i].TAT;
+		SWT += P[i].WT;
+		SBT += P[i].BT;
+	}
+	ATAT = STAT /(float)n;
+	AWT = SWT /(float)n;
+	CPU = ((float)SBT / P[n-1].CT) * 100;
+	throughput = (float)n / P[n-1].CT;
+	
+    printf("\nPID\tAT\tBT\tST\tCT\tTAT\t\t\tWT\t\t\tRT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%.2f\t\t%.2f\t\t%d\n",
+               P[i].PID, P[i].AT, P[i].BT, P[i].ST, P[i].CT,
+               P[i].TAT, P[i].WT, P[i].RT);
+    }
+
+    printf("\nSum of Turn Around Time: %d\nAverage Turn Around Time: %.2f\n", STAT, ATAT);
+    printf("Sum of Waiting Time: %d\nAverage Waiting Time: %.2f\n", SWT, AWT);
+    printf("CPU Utilization: %.2f%%\nThroughput: %.2f process/unit time\n", CPU, throughput);
+
+    return 0;
+}
