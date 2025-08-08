@@ -38,14 +38,83 @@ int main (){
         int minPid;
         minPid = findMin(P, cur_t, n, isComp);
         if (minPid != INT_MAX) {
-            if (P[minPid].AT == 0){
-                cur_t = P[minPid].BT;
-                P[minPid].CT = cur_t;
-            }
-            else{
                 P[minPid].CT = cur_t + P[minPid].BT;
                 cur_t += P[minPid].BT;
-            }
+            completed++;
+            isComp[minPid] = 1;
+            P[minPid].TAT = P[minPid].CT - P[minPid].AT; // Turn-Arround Time
+            P[minPid].WT = P[minPid].TAT - P[minPid].BT; // Waiting Time
+            P[minPid].ST = P[minPid].CT - P[minPid].BT; // Starting Time
+            P[minPid].RT = P[minPid].ST - P[minPid].AT; // Response Time
+            
+            STAT += P[minPid].TAT;
+            SWT += P[minPid].WT;
+            SBT += P[minPid].BT;
+        }
+        else cur_t++;
+    }
+	
+	ATAT = STAT /(float)n;
+	AWT = SWT /(float)n;
+	CPU = ((float)SBT / cur_t) * 100;
+	throughput = (float)n / cur_t;
+	
+    printf("\nPID\tAT\tBT\tST\tCT\tTAT\t\tWT\t\tRT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%.2f\t\t%.2f\t\t%d\n",
+               P[i].PID, P[i].AT, P[i].BT, P[i].ST, P[i].CT,
+               P[i].TAT, P[i].WT, P[i].RT);
+    }
+
+    printf("\nSum of Turn Around Time: %d\nAverage Turn Around Time: %.2f\n", STAT, ATAT);
+    printf("Sum of Waiting Time: %d\nAverage Waiting Time: %.2f\n", SWT, AWT);
+    printf("CPU Utilization: %.2f%%\nThroughput: %.2f process/unit time\n", CPU, throughput);
+
+    return 0;
+}# include <stdio.h>
+# include <stdlib.h>
+# include <limits.h>
+
+typedef struct process {
+	int PID, AT, BT, CT, ST, RT;
+	float TAT, WT;
+} Process;
+
+int findMin (Process* P, int ct, int n, int *Cp){
+    int min = INT_MAX, minid = INT_MAX;
+    for (int i = 0; i < n; i++) {
+        if (P[i].AT <= ct && Cp[i] != 1 && P[i].BT < min) {
+            min = P[i].BT;
+            minid = i;
+        }
+    }
+    return minid;
+}
+
+int main (){
+	int n, STAT = 0, SWT = 0, SBT = 0;
+	float ATAT, AWT, CPU, throughput;
+	printf("Number of process: ");
+	scanf ("%d",&n);
+	Process P[n];
+	printf ("Enter the Arrival time and Burst time for %d processes:\n",n);
+	for (int i = 0; i<n; i++){
+		printf ("Enter Arrival time and Burst time for Process %d: ",i+1);
+		scanf ("%d%d",&P[i].AT,&P[i].BT);
+		P[i].PID = i + 1;
+	}
+
+	// Calculating Completion time, Turn Arround Time, Waiting Time
+	int cur_t = 0, completed = 0, *isComp;
+	isComp = (int *)calloc(n, sizeof(int));
+	
+    while (completed != n){
+        int minPid;
+        minPid = findMin(P, cur_t, n, isComp);
+        if (minPid != INT_MAX) {
+            P[minPid].CT = cur_t + P[minPid].BT;
+            cur_t += P[minPid].BT;
+            
             completed++;
             isComp[minPid] = 1;
             P[minPid].TAT = P[minPid].CT - P[minPid].AT; // Turn-Arround Time
