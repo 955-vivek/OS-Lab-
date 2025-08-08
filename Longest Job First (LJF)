@@ -1,0 +1,78 @@
+# include <stdio.h>
+# include <stdlib.h>
+# include<limits.h>
+
+typedef struct process {
+	int PID, AT, BT, CT, ST, RT;
+	float TAT, WT;
+} Process;
+
+int findMax (Process* P, int ct, int n, int *Cp){
+    int max = INT_MIN, mxid = INT_MIN;
+    for (int i = 0; i < n; i++) {
+        if (P[i].AT <= ct && Cp[i] != 1 && P[i].BT > max) {
+            max = P[i].BT;
+            mxid = i;
+        }
+    }
+    return mxid;
+}
+
+int main (){
+	int n, STAT = 0, SWT = 0, SBT = 0;
+	float ATAT, AWT, CPU, throughput;
+	printf("Number of process: ");
+	scanf ("%d",&n);
+	Process P[n];
+	printf ("Enter the Arrival time and Burst time for %d processes:\n",n);
+	for (int i = 0; i<n; i++){
+		printf ("Enter Arrival time and Burst time for Process %d: ",i+1);
+		scanf ("%d%d",&P[i].AT,&P[i].BT);
+		P[i].PID = i + 1;
+	}
+
+	// Calculating Completion time, Turn Arround Time, Waiting Time
+	int cur_t = 0, completed = 0, *isComp;
+	isComp = (int *)calloc(n, sizeof(int));
+	
+    while (completed != n){
+        int mxPid;
+        printf ("Check\n");
+        mxPid = findMax(P, cur_t, n, isComp);
+        if (mxPid != INT_MIN) {
+            P[mxPid].CT = cur_t + P[mxPid].BT; // Completion time
+            cur_t += P[mxPid].BT;
+                
+            completed++;
+            printf ("%d\n",completed);
+            isComp[mxPid] = 1;
+            P[mxPid].TAT = P[mxPid].CT - P[mxPid].AT; // Turn-Arround Time
+            P[mxPid].WT = P[mxPid].TAT - P[mxPid].BT; // Waiting Time
+            P[mxPid].ST = P[mxPid].CT - P[mxPid].BT; // Starting Time
+            P[mxPid].RT = P[mxPid].ST - P[mxPid].AT; // Response Time
+            
+            STAT += P[mxPid].TAT;
+            SWT += P[mxPid].WT;
+            SBT += P[mxPid].BT;
+        }
+        else cur_t++;
+    }
+	printf ("Check\n");
+	ATAT = STAT /(float)n;
+	AWT = SWT /(float)n;
+	CPU = ((float)SBT / cur_t) * 100;
+	throughput = (float)n / cur_t;
+	
+    printf("\nPID\tAT\tBT\tST\tCT\tTAT\t\tWT\t\tRT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%.2f\t\t%.2f\t\t%d\n",
+               P[i].PID, P[i].AT, P[i].BT, P[i].ST, P[i].CT,
+               P[i].TAT, P[i].WT, P[i].RT);
+    }
+
+    printf("\nSum of Turn Around Time: %d\nAverage Turn Around Time: %.2f\n", STAT, ATAT);
+    printf("Sum of Waiting Time: %d\nAverage Waiting Time: %.2f\n", SWT, AWT);
+    printf("CPU Utilization: %.2f%%\nThroughput: %.2f process/unit time\n", CPU, throughput);
+
+    return 0;
+}
