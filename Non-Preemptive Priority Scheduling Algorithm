@@ -1,0 +1,73 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Process {
+    int PID, AT, BT, TAT, WT, CT, ST, RT, priority;
+} Process;
+
+int findMaxPriority(Process *P, int ct, int n, int *isCompleted) {
+    int maxPriority = -1, maxPID = -1;
+    for (int i = 0; i < n; i++) {
+        if (P[i].AT <= ct && !isCompleted[i] && P[i].priority > maxPriority) {
+            maxPriority = P[i].priority;
+            maxPID = i;
+        }
+    }
+    return maxPID;
+}
+
+int main() {
+    int n;
+    printf("Number of processes: ");
+    scanf("%d", &n);
+    Process P[n];
+
+    printf("Enter the Arrival time, Burst time, and Priority for %d processes:\n", n);
+    for (int i = 0; i < n; i++) {
+        scanf("%d%d%d", &P[i].AT, &P[i].BT, &P[i].priority);
+        P[i].PID = i + 1;
+    }
+
+    int cur_t = 0, completed = 0, isCompleted[n];
+    for (int i = 0; i < n; i++) isCompleted[i] = 0;
+    int STAT = 0, SWT = 0, SBT = 0;
+
+    while (completed != n) {
+        int maxPriorityPID = findMaxPriority(P, cur_t, n, isCompleted);
+        if (maxPriorityPID != -1) {
+            P[maxPriorityPID].ST = cur_t;
+            P[maxPriorityPID].CT = P[maxPriorityPID].ST + P[maxPriorityPID].BT;
+            P[maxPriorityPID].TAT = P[maxPriorityPID].CT - P[maxPriorityPID].AT;
+            P[maxPriorityPID].WT = P[maxPriorityPID].TAT - P[maxPriorityPID].BT;
+            P[maxPriorityPID].RT = P[maxPriorityPID].ST - P[maxPriorityPID].AT;
+
+            STAT += P[maxPriorityPID].TAT;
+            SWT += P[maxPriorityPID].WT;
+            SBT += P[maxPriorityPID].BT;
+
+            cur_t = P[maxPriorityPID].CT;
+            isCompleted[maxPriorityPID] = 1;
+            completed++;
+        } else {
+            cur_t++;
+        }
+    }
+
+    float ATAT = (float)STAT / n;
+    float AWT = (float)SWT / n;
+    float CPU = ((float)SBT / cur_t) * 100;
+    float throughput = (float)n / cur_t;
+
+    printf("\nPID\tAT\tBT\tPri\tST\tCT\tTAT\tWT\tRT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+               P[i].PID, P[i].AT, P[i].BT, P[i].priority, P[i].ST, P[i].CT,
+               P[i].TAT, P[i].WT, P[i].RT);
+    }
+
+    printf("\nSum of Turnaround Time: %d\nAverage Turnaround Time: %.2f\n", STAT, ATAT);
+    printf("Sum of Waiting Time: %d\nAverage Waiting Time: %.2f\n", SWT, AWT);
+    printf("CPU Utilization: %.2f%%\nThroughput: %.2f process/unit time\n", CPU, throughput);
+
+    return 0;
+}
