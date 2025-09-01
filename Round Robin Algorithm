@@ -1,0 +1,150 @@
+# include <stdio.h>
+# include <stdlib.h>
+# include <limits.h>
+# include <stdbool.h>
+
+typedef struct Process {
+    int PID, AT, BT, TAT, WT, CT, ST, RT;
+}Process;
+
+typedef struct node {
+	int index;
+	struct node *next;
+} node;
+
+typedef struct queue {
+	node *front, *rear;
+}queue;
+
+node* createNode (int i){
+	node* n = (node*)malloc(sizeof(node));
+	n->index = i;
+	n->next = NULL;
+	return n;
+}
+
+queue* createQueue(){
+	queue* q = (queue*) malloc (sizeof(queue));
+	q->front = NULL;
+	q->rear = NULL;
+	return q;
+}
+
+void push (queue **q, int p){
+	node* n = createNode(p);
+	if ((*q)->rear == NULL){
+		(*q)->front = n;
+		(*q)->rear = n;
+	}
+	else{
+		(*q)->rear->next = n;
+		(*q)->rear = n;
+	}
+}
+
+int pop (queue **q){
+	if ((*q)->front == NULL) return -1;
+	int p = (*q)->front->index;
+	node* t = (*q)->front;
+	(*q)->front = (*q)->front->next;
+	if ((*q)->front == NULL) (*q)->rear = NULL;
+	free (t);
+	return p;
+}
+
+bool isEmpty(queue *q){
+	if (q->front == NULL) return 1;
+	return 0;
+}
+
+int compare (const  void* p1, const void *p2){
+	int a = ((Process*)p1)->AT;
+	int b = ((Process*)p2)->AT;
+	
+	return a - b;
+}
+
+int main(){
+    queue* q = createQueue();
+    int n, Tq;
+    printf("Number of process: ");
+	scanf ("%d",&n);
+	Process P = (Process)calloc(n, sizeof(Process));
+	printf ("Enter the Arrival time and Burst time for %d processes:\n",n);
+	for (int i = 0; i<n; i++){
+		printf ("Enter Arrival time and Burst time for Process %d: ",i+1);
+		scanf ("%d%d",&P[i].AT,&P[i].BT);
+		P[i].PID = i;
+	}
+	printf ("Enter Tq :");
+	scanf ("%d",&Tq);
+
+    // in-between variables
+    int cur_t = 0, isCompleted[n];
+    float STAT = 0, SWT = 0, SBT = 0, ATAT, AWT, CPU, throughput;
+    
+    qsort ((void *)P, n, sizeof(Process), compare);
+    for (int i = 0; i<n; i++) isCompleted[i] = P[i].BT;
+    // Calculating Completion time and etc
+    cur_t = P[0].AT;
+    push (&q, 0);
+    int i = 1;
+
+    while (!isEmpty(q) || i < n) {
+        if (!isEmpty(q)) {
+            int idx = pop(&q);
+            if (isCompleted[idx] == P[idx].BT) 
+                P[idx].ST = cur_t;
+
+            if (isCompleted[idx] > Tq) {
+                isCompleted[idx] -= Tq;
+                cur_t += Tq;
+            } else {
+                cur_t += isCompleted[idx];
+                isCompleted[idx] = 0;
+
+                P[idx].CT = cur_t;
+                P[idx].TAT = P[idx].CT - P[idx].AT;
+                P[idx].WT = P[idx].TAT - P[idx].BT;
+                P[idx].RT = P[idx].ST - P[idx].AT;
+
+                STAT += P[idx].TAT;
+                SWT += P[idx].WT;
+                SBT += P[idx].BT;
+            }
+            while (i < n && P[i].AT <= cur_t) {
+                push(&q, i);
+                i++;
+            }
+
+            if (isCompleted[idx] > 0) 
+                push(&q, idx);
+        } 
+        else {
+            cur_t = P[i].AT;
+            push(&q, i);
+            i++;
+        }
+    }
+
+    
+    ATAT = STAT / n;
+	AWT = SWT / n;
+	CPU = (SBT / (float)cur_t) * 100;
+	throughput = (float)n / cur_t;
+	
+    printf("\nPID\tAT\tBT\tST\tCT\tTAT\tWT\tRT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+               (P[i].PID)+1, P[i].AT, P[i].BT, P[i].ST, P[i].CT,
+               P[i].TAT, P[i].WT, P[i].RT);
+    }
+
+    printf("\nSum of Turn Around Time: %.2f\nAverage Turn Around Time: %.2f\n", STAT, ATAT);
+    printf("Sum of Waiting Time: %.2f\nAverage Waiting Time: %.2f\n", SWT, AWT);
+    printf("CPU Utilization: %.2f%%\nThroughput: %.2f process/unit time\n", CPU, throughput);
+    
+    free (P);
+    free (q);
+    return 0;
+}
