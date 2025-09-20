@@ -1,0 +1,55 @@
+#include <stdio.h>
+#include <stdlib.h>
+typedef struct Process {
+    int PID, A, B, C, mA, mB, mC;
+}Process;
+int main() {
+    int n, A[3];
+    printf("Number of process: ");
+    scanf("%d", &n);
+    Process *P = (Process*)calloc(n, sizeof(Process));
+    printf("Enter allocated resources A, B, C for %d processes:\n", n);
+    for (int i = 0; i < n; i++) {
+        printf("Enter allocated resources A, B, C for Process %d: ", i + 1);
+        scanf("%d%d%d", &P[i].A, &P[i].B, &P[i].C);
+        P[i].PID = i;
+    }printf("Enter maximum resources needed A, B, C for %d processes:\n", n);
+    for (int i = 0; i < n; i++) {
+        printf("Enter Maximum resources needed A, B, C for Process %d: ", i + 1);
+        scanf("%d%d%d", &P[i].mA, &P[i].mB, &P[i].mC);
+    } printf("Enter the Total Available resources A, B, C : ");
+    scanf("%d%d%d", &A[0], &A[1], &A[2]);
+int req[n][3];
+    for (int i = 0; i < n; i++) {
+        req[i][0] = P[i].mA - P[i].A;
+        req[i][1] = P[i].mB - P[i].B;
+        req[i][2] = P[i].mC - P[i].C;
+    }for (int i = 0; i < n; i++) {
+        A[0] -= P[i].A;
+        A[1] -= P[i].B;
+        A[2] -= P[i].C;
+    }int *isCompleted = (int*)calloc(n, sizeof(int)), completed = 0, changed = 1, SafeSeq[n];
+    int i = 0;
+    while (completed < n || changed) {
+        changed = 0;
+        if (A[0] >= req[i][0] && A[1] >= req[i][1] && A[2] >= req[i][2] && isCompleted[i] != 1) {
+            A[0] += P[i].A;
+            A[1] += P[i].B;
+            A[2] += P[i].C;
+
+            SafeSeq[completed++] = P[i].PID;
+            changed = 1;
+            isCompleted[i] = 1;
+            i = 0;
+        }else i++;
+        if (i == n) i = 0; 
+    }
+    if (completed == n) {
+        printf("No Deadlock Detected\n");
+        printf("Safe Sequence : ");
+        for (int i = 0; i < n; i++) {
+            printf("P%d ", SafeSeq[i]);
+        } printf("\n");
+    }else printf("Deadlock Detected \n");
+    return 0;
+}
